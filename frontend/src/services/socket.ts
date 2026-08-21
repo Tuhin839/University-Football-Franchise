@@ -1,8 +1,18 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+let rawSocketUrl = (import.meta.env.VITE_SOCKET_URL as string) || 'http://localhost:5000';
 
-export const socket: Socket = io(SOCKET_URL, {
+rawSocketUrl = rawSocketUrl.trim().replace(/[\[\]]/g, '');
+if (rawSocketUrl.startsWith('https:/') && !rawSocketUrl.startsWith('https://')) {
+  rawSocketUrl = rawSocketUrl.replace('https:/', 'https://');
+} else if (rawSocketUrl.startsWith('http:/') && !rawSocketUrl.startsWith('http://')) {
+  rawSocketUrl = rawSocketUrl.replace('http:/', 'http://');
+} else if (!rawSocketUrl.startsWith('http://') && !rawSocketUrl.startsWith('https://')) {
+  rawSocketUrl = `https://${rawSocketUrl}`;
+}
+rawSocketUrl = rawSocketUrl.replace(/\/+$/, '');
+
+export const socket: Socket = io(rawSocketUrl, {
   autoConnect: true,
   reconnection: true,
   reconnectionAttempts: 10,
