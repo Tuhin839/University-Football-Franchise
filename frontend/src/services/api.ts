@@ -2,14 +2,15 @@ import axios from 'axios';
 
 let rawUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:5000/api';
 
-// Robust URL Sanitizer to prevent malformed environment variable crashes
-rawUrl = rawUrl.trim().replace(/[\[\]]/g, '');
-if (rawUrl.startsWith('https:/') && !rawUrl.startsWith('https://')) {
-  rawUrl = rawUrl.replace('https:/', 'https://');
-} else if (rawUrl.startsWith('http:/') && !rawUrl.startsWith('http://')) {
-  rawUrl = rawUrl.replace('http:/', 'http://');
-} else if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
-  rawUrl = `https://${rawUrl}`;
+// Intelligent Extractor: Cleans any accidental brackets or markdown copies
+const match = rawUrl.match(/https?:\/\/[^\s\)\"\'\]]+/);
+if (match) {
+  rawUrl = match[0];
+} else {
+  rawUrl = rawUrl.split('(')[0].trim().replace(/[\[\]]/g, '');
+  if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+    rawUrl = `https://${rawUrl}`;
+  }
 }
 rawUrl = rawUrl.replace(/\/+$/, '');
 
