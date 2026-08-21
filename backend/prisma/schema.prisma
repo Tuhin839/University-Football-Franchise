@@ -1,0 +1,181 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SystemPhase {
+  SETUP
+  REGISTRATION
+  AUCTION
+  TOURNAMENT
+}
+
+enum Role {
+  SUPER_ADMIN
+  PODIUM_ADMIN
+  TEAM_MANAGER
+  PLAYER
+  SPECTATOR
+}
+
+enum AuctionMode {
+  NORMAL
+  BLIND
+}
+
+enum PlayerStatus {
+  REGISTERED
+  ON_STAGE
+  SOLD
+  UNSOLD
+}
+
+model SystemState {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  currentPhase SystemPhase @default(SETUP)
+  updatedAt    DateTime    @updatedAt
+}
+
+model RuleConfig {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  totalTeamBudget  Float    @default(100000)
+  minRosterSize    Int      @default(15)
+  academicSessions String[] @default(["2022-2023", "2023-2024", "2024-2025", "2025-2026"])
+  allowedPositions String[] @default(["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST", "CF"])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model PlayerTier {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  basePrice Float
+  players   Player[]
+}
+
+model BidRaiseTier {
+  id               String @id @default(auto()) @map("_id") @db.ObjectId
+  minBudgetPercent Float
+  maxBudgetPercent Float
+  raisePercentage  Float
+}
+
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(SPECTATOR)
+  team         Team?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Team {
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  name            String      @unique
+  logoUrl         String?
+  managerId       String      @unique @db.ObjectId
+  manager         User        @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  allocatedBudget Float
+  remainingBudget Float
+  players         Player[]
+  homeMatches     Match[]     @relation("HomeTeam")
+  awayMatches     Match[]     @relation("AwayTeam")
+  tournamentStats TeamStats?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Player {
+  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
+  name               String
+  studentId          String            @unique
+  academicSession    String
+  jerseyName         String
+  primaryPosition    String
+  secondaryPositions String[]          @default([])
+  imageCloudinaryId  String
+  imageUrl           String
+  tierId             String            @db.ObjectId
+  tier               PlayerTier        @relation(fields: [tierId], references: [id])
+  teamId             String?           @db.ObjectId
+  team               Team?             @relation(fields: [teamId], references: [id])
+  status             PlayerStatus      @default(REGISTERED)
+  soldPrice          Float?
+  auctionBids        AuctionBid[]
+  matchStats         PlayerMatchStat[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model AuctionBid {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  playerId  String      @db.ObjectId
+  player    Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  teamId    String
+  amount    Float
+  mode      AuctionMode
+  isWinning Boolean     @default(false)
+  timestamp DateTime    @default(now())
+}
+
+model Fixture {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  round       String
+  isTwoLegged Boolean  @default(false)
+  matches     Match[]
+  createdAt   DateTime @default(now())
+}
+
+model Match {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  fixtureId   String            @db.ObjectId
+  fixture     Fixture           @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  legNumber   Int               @default(1)
+  homeTeamId  String            @db.ObjectId
+  awayTeamId  String            @db.ObjectId
+  homeScore   Int               @default(0)
+  awayScore   Int               @default(0)
+  isLive      Boolean           @default(false)
+  isCompleted Boolean           @default(false)
+  venue       String            @default("University Central Ground")
+  kickoffTime DateTime
+  homeTeam    Team              @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    Team              @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  stats       PlayerMatchStat[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model PlayerMatchStat {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  matchId     String   @db.ObjectId
+  playerId    String   @db.ObjectId
+  goals       Int      @default(0)
+  assists     Int      @default(0)
+  cleanSheet  Boolean  @default(false)
+  yellowCards Int      @default(0)
+  redCards    Int      @default(0)
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model TeamStats {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  teamId       String @unique @db.ObjectId
+  team         Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  played       Int    @default(0)
+  won          Int    @default(0)
+  drawn        Int    @default(0)
+  lost         Int    @default(0)
+  goalsFor     Int    @default(0)
+  goalsAgainst Int    @default(0)
+  goalDiff     Int    @default(0)
+  points       Int    @default(0)
+}

@@ -1,0 +1,19 @@
+# Environment Variables (পাসওয়ার্ড ও সিক্রেট ঠেকানোর জন্য)
+.env
+.env.local
+.env.*.local
+
+# Dependencies (অপ্রয়োজনীয় বড় ফাইল)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# Build Outputs
+dist/
+build/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

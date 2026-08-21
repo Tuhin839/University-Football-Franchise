@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .glow-green {
+    box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.4);
+  }
+  .glow-gold {
+    box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.4);
+  }
+}
