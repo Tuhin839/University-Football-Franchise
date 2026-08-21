@@ -238,7 +238,7 @@ class TournamentEngine {
       topScorers: enrichedScorers,
       topAssists: enrichedAssists,
       cleanSheets,
-      cards: yellowCards,
+      cards,
     };
   }
 }
