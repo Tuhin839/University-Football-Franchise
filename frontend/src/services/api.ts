@@ -1,6 +1,19 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+let rawUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:5000/api';
+
+// Robust URL Sanitizer to prevent malformed environment variable crashes
+rawUrl = rawUrl.trim().replace(/[\[\]]/g, '');
+if (rawUrl.startsWith('https:/') && !rawUrl.startsWith('https://')) {
+  rawUrl = rawUrl.replace('https:/', 'https://');
+} else if (rawUrl.startsWith('http:/') && !rawUrl.startsWith('http://')) {
+  rawUrl = rawUrl.replace('http:/', 'http://');
+} else if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+  rawUrl = `https://${rawUrl}`;
+}
+rawUrl = rawUrl.replace(/\/+$/, '');
+
+export const API_BASE_URL = rawUrl;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,3 +26,12 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+export const getErrorMessage = (err: any, fallback: string = 'An error occurred'): string => {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  if (typeof err.response?.data?.error === 'string') return err.response.data.error;
+  if (typeof err.response?.data?.message === 'string') return err.response.data.message;
+  if (typeof err.message === 'string') return err.message;
+  return fallback;
+};
