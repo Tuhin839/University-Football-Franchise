@@ -181,7 +181,7 @@ class TournamentEngine {
    * Player statistics leaderboards
    */
   public async getPlayerLeaderboards() {
-    const [topScorers, topAssists, cleanSheets, yellowCards, redCards] = await Promise.all([
+    const [topScorers, topAssists, cleanSheets, cards] = await Promise.all([
       // Top Scorers
       prisma.playerMatchStat.groupBy({
         by: ['playerId'],
